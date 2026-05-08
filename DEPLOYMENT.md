@@ -75,6 +75,12 @@ curl -sk https://console-cdnetworks.vnso.vn/api/v1/auth/login \
 # GitHub Pages static docs
 curl -sI https://trinhtanphat.github.io/CDNetworks-platform/ | head -1
 curl -sI https://trinhtanphat.github.io/CDNetworks-platform/assets/css/styles.aab52d52.css | head -1
+
+# Console route coverage
+curl -skI https://console-cdnetworks.vnso.vn/dns/zones \
+  --resolve console-cdnetworks.vnso.vn:443:103.9.157.6
+curl -skI https://console-cdnetworks.vnso.vn/settings/branding \
+  --resolve console-cdnetworks.vnso.vn:443:103.9.157.6
 ```
 
 ## DNS cần cấu hình (Cloudflare)
@@ -106,6 +112,15 @@ git pull
 docker compose -f docker-compose.deploy.yml build
 docker compose -f docker-compose.deploy.yml --env-file .env up -d
 ```
+
+Các thay đổi console/web/api cần rebuild container tương ứng. Sau khi đổi nginx host config:
+
+```bash
+docker exec xiaozhi-esp32-server-web nginx -t \
+  && docker exec xiaozhi-esp32-server-web nginx -s reload
+```
+
+Branding production dùng asset chính thức từ `brand/`; nếu đổi file nguồn, copy lại vào `apps/web/public`, `apps/console/public`, `docs/static/img`, rồi rebuild web/console/docs.
 
 ## Troubleshooting
 

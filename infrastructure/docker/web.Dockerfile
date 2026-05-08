@@ -9,11 +9,12 @@
 FROM node:20-alpine AS docs-builder
 WORKDIR /docs
 RUN apk add --no-cache libc6-compat git
-COPY docs/package.json ./
+COPY docs/package.json docs/pnpm-lock.yaml* ./
 RUN --mount=type=cache,target=/root/.npm \
-    npm install --no-audit --no-fund --legacy-peer-deps
+    npm install -g pnpm@9 --no-audit --no-fund \
+    && pnpm install --no-frozen-lockfile --ignore-workspace
 COPY docs/. .
-RUN npm run build
+RUN pnpm run build
 
 # ---- Stage 1: deps ----------------------------------------------------------
 FROM node:20-alpine AS deps

@@ -37,9 +37,17 @@ pnpm test:e2e   # cần web + api + console đang chạy
 - [`AI_CONTEXT.md`](./AI_CONTEXT.md)     — port, lệnh, gotcha cho agent.
 - [`docs/`](./docs/)                      — nội dung Docusaurus (intro, tutorials, API ref).
 
+## Console hiện có
+
+- Dashboard CDN có KPI, traffic line chart theo region và status-code donut 2xx/3xx/4xx/5xx.
+- Sidebar đã có route coverage cho CDN Reports, Edge Configurations, SSL, Tools, Application Shield, Flood Shield, Media, Edge Computing, Cloud DNS và Admin.
+- Admin Branding tại `/settings/branding` cho phép đổi logo, social logo, favicon, tên portal và màu thương hiệu theo localStorage config.
+- Access Logs dùng `/api/v1/accesslogs`, download route same-origin `/api/v1/accesslogs/:id/download`, hỗ trợ Bearer JWT hoặc signed URL 5 phút.
+- Logo/favicons production lấy từ `brand/favicon-32x32.png`, `brand/logo.png`, `brand/logo-social-2024.png`.
+
 ## Tài khoản demo
 
-- Email: `admin@demo.com`
-- Password: `demo1234`
+- Email: `admin@vnso.vn`
+- Password: `Admin@@3224@@`
 
-(Token JWT trả về có TTL 15 phút; refresh chưa cài trong mock.)
+(Token JWT trả về có TTL 15 phút; credential production prototype đọc từ `.env`.)

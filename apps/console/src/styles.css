@@ -1,0 +1,28 @@
+:root {
+  --cdn-primary: #0a4cff;
+  --cdn-accent: #00c8b8;
+}
+
+body {
+  margin: 0;
+  background: #f1f3f6;
+}
+
+button, input, textarea, select {
+  font-family: inherit;
+}
+
+.cdnProductRail button:hover {
+  background: rgba(255,255,255,0.08) !important;
+  color: #ffffff !important;
+}
+
+.cdn-chart-axis {
+  stroke: #d8dee9;
+  stroke-width: 1;
+}
+
+.cdn-chart-grid {
+  stroke: #eef2f7;
+  stroke-width: 1;
+}

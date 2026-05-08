@@ -12,9 +12,11 @@ import {
   RocketOutlined,
   DatabaseOutlined,
   ToolOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { getBranding, subscribeBranding } from '@/services/branding';
 
 const { Sider } = Layout;
 
@@ -27,7 +29,7 @@ const { Sider } = Layout;
  * Class `isomorphicSidebar`, `isoDashboardMenu` được giữ để theme template gốc còn áp dụng.
  */
 
-type ProductKey = 'cdn-pro' | 'application-shield' | 'flood-shield' | 'media' | 'edge' | 'dns';
+type ProductKey = 'cdn-pro' | 'application-shield' | 'flood-shield' | 'media' | 'edge' | 'dns' | 'admin';
 
 type ProductDef = {
   key: ProductKey;
@@ -150,13 +152,33 @@ const PRODUCTS: ProductDef[] = [
       { key: '/dns/health-checks', label: 'Health Checks' },
     ],
   },
+  {
+    key: 'admin',
+    label: 'Admin',
+    icon: <SettingOutlined />,
+    menu: [
+      { key: '/settings/branding', label: 'Branding', icon: <SettingOutlined /> },
+      { key: '/settings/team', label: 'Team & Roles', icon: <KeyOutlined /> },
+      { key: '/settings/billing', label: 'Billing & Usage', icon: <DatabaseOutlined /> },
+    ],
+  },
 ];
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [productKey, setProductKey] = useState<ProductKey>('cdn-pro');
+  const [branding, setBranding] = useState(getBranding());
   const product = PRODUCTS.find((p) => p.key === productKey)!;
+
+  useEffect(() => subscribeBranding(() => setBranding(getBranding())), []);
+
+  const productForPath = useMemo(() => PRODUCTS.find((p) => p.menu.some((m) => {
+    if (m.key.startsWith('/') && pathname.startsWith(m.key)) return true;
+    return m.children?.some((child) => pathname.startsWith(child.key));
+  }))?.key || 'cdn-pro', [pathname]);
+
+  useEffect(() => setProductKey(productForPath), [productForPath]);
 
   const items = product.menu.map((m) => {
     if (m.children) return { key: m.key, icon: m.icon, label: m.label, children: m.children };
@@ -184,14 +206,13 @@ export default function Sidebar() {
       >
         <div
           style={{
-            width: 36, height: 36, borderRadius: 8,
-            background: 'linear-gradient(120deg,#0a4cff,#00c8b8)',
-            color: '#fff', display: 'grid', placeItems: 'center',
-            fontWeight: 800, marginBottom: 8,
+            width: 44, height: 44, borderRadius: 8,
+            background: '#fff', display: 'grid', placeItems: 'center',
+            marginBottom: 8, padding: 5,
           }}
           aria-label="CDNetworks"
         >
-          C
+          <img src={branding.faviconUrl} alt={branding.companyName} style={{ width: 30, height: 30, objectFit: 'contain' }} />
         </div>
         {PRODUCTS.map((p) => (
           <Tooltip key={p.key} title={p.label} placement="right">

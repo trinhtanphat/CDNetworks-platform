@@ -78,7 +78,7 @@ export default function Header() {
             <option value="ja">日本語</option>
           </select>
           <Link
-            href="https://console.cdnetworks-platform.local"
+            href="https://console-cdnetworks.vnso.vn"
             className="text-sm font-medium text-slate-700 hover:text-brand"
           >
             Login

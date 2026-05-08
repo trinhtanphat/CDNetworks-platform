@@ -3,8 +3,9 @@ import {
   BellOutlined, UserOutlined, LogoutOutlined, SettingOutlined,
   SearchOutlined, GlobalOutlined, QuestionCircleOutlined, ApiOutlined,
 } from '@ant-design/icons';
-import { logout } from '@/services/auth';
-import { useState } from 'react';
+import { currentUser, logout } from '@/services/auth';
+import { getBranding, subscribeBranding } from '@/services/branding';
+import { useEffect, useState } from 'react';
 
 const { Header } = Layout;
 
@@ -16,14 +17,11 @@ const { Header } = Layout;
  */
 export default function Topbar() {
   const [env, setEnv] = useState<'production' | 'staging'>('production');
+  const [branding, setBranding] = useState(getBranding());
 
-  const userEmail = (() => {
-    try {
-      const raw = (localStorage.getItem('cdn_access_token') || '').split('.')[1];
-      if (!raw) return 'admin@demo.com';
-      return JSON.parse(atob(raw))?.email || 'admin@demo.com';
-    } catch { return 'admin@demo.com'; }
-  })();
+  useEffect(() => subscribeBranding(() => setBranding(getBranding())), []);
+
+  const userEmail = currentUser()?.email || 'admin@vnso.vn';
 
   return (
     <Header
@@ -34,7 +32,8 @@ export default function Topbar() {
       }}
     >
       <Space size="large">
-        <span style={{ fontSize: 16, fontWeight: 600 }}>Customer Portal</span>
+        <img src={branding.logoUrl} alt={branding.companyName} style={{ height: 28, maxWidth: 150, objectFit: 'contain' }} />
+        <span style={{ fontSize: 16, fontWeight: 600 }}>{branding.portalTitle}</span>
         <Tag color={env === 'production' ? 'green' : 'orange'} style={{ marginInlineEnd: 0 }}>
           {env.toUpperCase()}
         </Tag>
@@ -61,8 +60,8 @@ export default function Topbar() {
         <Dropdown
           menu={{
             items: [
-              { key: 'docs', label: <a href="https://docs.cdnetworks-platform.local" target="_blank" rel="noreferrer">Documentation</a> },
-              { key: 'api',  label: <a href="https://docs.cdnetworks-platform.local/api-reference" target="_blank" rel="noreferrer">API Reference</a> },
+              { key: 'docs', label: <a href="https://cdnetworks.vnso.vn/document/" target="_blank" rel="noreferrer">Documentation</a> },
+              { key: 'api',  label: <a href="https://cdnetworks.vnso.vn/document/api-reference/access-logs-api/" target="_blank" rel="noreferrer">API Reference</a> },
               { key: 'sup',  label: 'Open Support Ticket' },
             ],
           }}
@@ -96,7 +95,8 @@ export default function Topbar() {
           menu={{
             items: [
               { key: 'profile', icon: <UserOutlined />,    label: 'My Profile' },
-              { key: 'team',    icon: <SettingOutlined />, label: 'Team & API Keys' },
+              { key: 'team',    icon: <SettingOutlined />, label: <a href="/settings/team">Team & API Keys</a> },
+              { key: 'branding', icon: <SettingOutlined />, label: <a href="/settings/branding">Branding</a> },
               { type: 'divider' as const },
               { key: 'logout',  icon: <LogoutOutlined />,  label: 'Sign out', onClick: () => logout() },
             ],

@@ -3,6 +3,7 @@ import { Form, Input, Button, Card, Alert, Checkbox, Divider, Space } from 'antd
 import { LockOutlined, MailOutlined, SafetyCertificateTwoTone, GoogleOutlined, GithubOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { login } from '@/services/auth';
+import { getBranding } from '@/services/branding';
 
 /**
  * Login page — phỏng theo style enterprise SaaS.
@@ -17,6 +18,7 @@ export default function Login() {
   const { state } = useLocation() as { state?: { from?: string } };
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const branding = getBranding();
 
   async function onFinish(values: { email: string; password: string; remember?: boolean }) {
     setError(null);
@@ -49,16 +51,8 @@ export default function Login() {
         }}
       >
         <Space direction="vertical" align="center" style={{ width: '100%', marginBottom: 16 }}>
-          <div
-            style={{
-              width: 48, height: 48, borderRadius: 12,
-              background: 'linear-gradient(120deg,#0a4cff,#00c8b8)',
-              display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 800, fontSize: 20,
-            }}
-          >
-            C
-          </div>
-          <h2 style={{ margin: 0 }}>Sign in to CDNetworks</h2>
+          <img src={branding.logoUrl} alt={branding.companyName} style={{ height: 48, maxWidth: 240, objectFit: 'contain' }} />
+          <h2 style={{ margin: 0 }}>Sign in to {branding.companyName}</h2>
           <span style={{ color: '#64748b', fontSize: 13 }}>
             Customer Portal · Production
           </span>
@@ -140,7 +134,7 @@ export default function Login() {
 
         <p style={{ marginTop: 16, fontSize: 12, color: '#64748b', textAlign: 'center' }}>
           Don't have an account?{' '}
-          <a href="https://cdnetworks-platform.local/free-trial">Start free trial</a>
+          <a href="https://cdnetworks.vnso.vn/free-trial">Start free trial</a>
         </p>
       </Card>
     </div>

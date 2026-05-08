@@ -20,7 +20,7 @@ nạp vào hệ thống SIEM.
 
 ### Bước 1 — Mở trang Access Logs
 
-1. Đăng nhập vào [Console](https://console.cdnetworks-platform.local).
+1. Đăng nhập vào [Console](https://console-cdnetworks.vnso.vn).
 2. Sidebar → **Access Logs** (icon kính lúp).
 
 ![Sidebar](../../static/img/console-sidebar.png)

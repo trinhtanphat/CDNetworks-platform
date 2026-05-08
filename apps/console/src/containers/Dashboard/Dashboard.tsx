@@ -11,7 +11,7 @@ import {
  * Dashboard giống console.cdnetworks.com/cdn/dashboard:
  *  - Bộ chọn timeframe (1h / 24h / 7d / 30d)
  *  - 4 KPI cards
- *  - Chart row (placeholder — production gắn @ant-design/charts)
+ *  - Traffic chart + status donut không cần dependency chart ngoài
  *  - Top 10 hostnames table
  *  - Real-time security incidents
  */
@@ -97,12 +97,12 @@ export default function Dashboard() {
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={16}>
           <Card title="Traffic by region" extra={<Tag color="blue">{range}</Tag>}>
-            <ChartPlaceholder label="Traffic line chart" />
+            <TrafficLineChart range={range} />
           </Card>
         </Col>
         <Col xs={24} lg={8}>
           <Card title="Status code mix">
-            <ChartPlaceholder label="2xx / 3xx / 4xx / 5xx donut" />
+            <StatusCodeDonut />
           </Card>
         </Col>
       </Row>
@@ -157,17 +157,104 @@ export default function Dashboard() {
   );
 }
 
-function ChartPlaceholder({ label }: { label: string }) {
+const regionSeries = [
+  { region: 'APAC', color: '#0a4cff', values: [42, 48, 51, 56, 63, 69, 76, 82, 88, 93, 97, 104] },
+  { region: 'Europe', color: '#10b981', values: [28, 31, 37, 41, 43, 52, 58, 61, 66, 70, 73, 79] },
+  { region: 'North America', color: '#f97316', values: [35, 39, 44, 48, 55, 57, 59, 63, 71, 76, 78, 84] },
+  { region: 'South America', color: '#8b5cf6', values: [12, 14, 17, 20, 23, 24, 27, 29, 33, 35, 38, 41] },
+];
+
+function TrafficLineChart({ range }: { range: string }) {
+  const width = 760;
+  const height = 220;
+  const padding = 28;
+  const max = Math.max(...regionSeries.flatMap((s) => s.values));
+  const xStep = (width - padding * 2) / (regionSeries[0].values.length - 1);
+
+  const pathFor = (values: number[]) => values
+    .map((value, index) => {
+      const x = padding + index * xStep;
+      const y = height - padding - (value / max) * (height - padding * 2);
+      return `${index === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(' ');
+
   return (
-    <div
-      style={{
-        height: 220,
-        background: 'repeating-linear-gradient(45deg, #f8fafc 0 8px, #f1f5f9 8px 16px)',
-        borderRadius: 8, display: 'grid', placeItems: 'center',
-        color: '#64748b', fontSize: 13,
-      }}
-    >
-      {label}
+    <div style={{ height: 260 }}>
+      <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="220" role="img" aria-label={`Traffic line chart ${range}`}>
+        {[0, 1, 2, 3].map((line) => {
+          const y = padding + line * ((height - padding * 2) / 3);
+          return <line key={line} className="cdn-chart-grid" x1={padding} x2={width - padding} y1={y} y2={y} />;
+        })}
+        <line className="cdn-chart-axis" x1={padding} x2={width - padding} y1={height - padding} y2={height - padding} />
+        {regionSeries.map((series) => (
+          <g key={series.region}>
+            <path d={pathFor(series.values)} fill="none" stroke={series.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            {series.values.map((value, index) => {
+              const x = padding + index * xStep;
+              const y = height - padding - (value / max) * (height - padding * 2);
+              return <circle key={`${series.region}-${index}`} cx={x} cy={y} r="3" fill={series.color} />;
+            })}
+          </g>
+        ))}
+      </svg>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 8 }}>
+        {regionSeries.map((series) => (
+          <span key={series.region} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#475569' }}>
+            <span style={{ width: 10, height: 10, borderRadius: 10, background: series.color }} />
+            {series.region} · {series.values.at(-1)} Gbps
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const statusMix = [
+  { label: '2xx', value: 92.4, color: '#10b981' },
+  { label: '3xx', value: 4.2, color: '#0a4cff' },
+  { label: '4xx', value: 2.8, color: '#f97316' },
+  { label: '5xx', value: 0.6, color: '#ef4444' },
+];
+
+function StatusCodeDonut() {
+  let start = 0;
+  const gradient = statusMix.map((item) => {
+    const end = start + item.value;
+    const part = `${item.color} ${start}% ${end}%`;
+    start = end;
+    return part;
+  }).join(', ');
+
+  return (
+    <div style={{ height: 260, display: 'grid', gridTemplateColumns: '160px 1fr', gap: 20, alignItems: 'center' }}>
+      <div
+        role="img"
+        aria-label="2xx 3xx 4xx 5xx donut"
+        style={{
+          width: 150,
+          height: 150,
+          borderRadius: '50%',
+          background: `conic-gradient(${gradient})`,
+          display: 'grid',
+          placeItems: 'center',
+          boxShadow: 'inset 0 0 0 18px #fff, 0 10px 24px rgba(15,23,42,0.08)',
+        }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a' }}>99.4%</div>
+          <div style={{ fontSize: 11, color: '#64748b' }}>success</div>
+        </div>
+      </div>
+      <Space direction="vertical" size={8}>
+        {statusMix.map((item) => (
+          <div key={item.label} style={{ display: 'grid', gridTemplateColumns: '12px 42px 1fr', gap: 8, alignItems: 'center', fontSize: 13 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 10, background: item.color }} />
+            <strong>{item.label}</strong>
+            <span style={{ color: '#64748b' }}>{item.value}%</span>
+          </div>
+        ))}
+      </Space>
     </div>
   );
 }

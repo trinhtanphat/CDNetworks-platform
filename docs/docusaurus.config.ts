@@ -9,7 +9,7 @@ const config: Config = {
   tagline: 'Web Performance · Cloud Security · Edge Computing',
   url: isGitHubPages ? 'https://trinhtanphat.github.io' : 'https://cdnetworks.vnso.vn',
   baseUrl: isGitHubPages ? '/CDNetworks-platform/' : '/document/',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/favicon-32x32.png',
   organizationName: 'trinhtanphat',
   projectName: 'CDNetworks-platform',
   onBrokenLinks: 'warn',

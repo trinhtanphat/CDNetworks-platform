@@ -16,7 +16,7 @@ pnpm add @cdn/sdk
 import { CDNClient } from '@cdn/sdk';
 
 const cdn = new CDNClient({
-  baseUrl: 'https://api.cdnetworks-platform.local',
+  baseUrl: 'https://console-cdnetworks.vnso.vn',
   token:   process.env.CDN_TOKEN!,
   retries: 3,
   timeout: 30_000,

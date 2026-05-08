@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: 'CDNetworks Platform — Web Performance · Cloud Security · Edge Computing',
   description:
     'Tăng tốc website, bảo vệ ứng dụng và triển khai workload tới biên với mạng lưới CDN toàn cầu của CDNetworks.',
+  icons: {
+    icon: '/favicon-32x32.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

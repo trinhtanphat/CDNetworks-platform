@@ -46,10 +46,9 @@ Nguyên tắc:
 ```
                            ┌─────────────────────────────────┐
  Browser ── Cloudflare ──▶ │ Nginx (host)  443/80            │
-                           │  ├─ www.cdn-platform.local      │──▶ apps/web (Next.js :3001)
-                           │  ├─ console.cdn-platform.local  │──▶ apps/console (Vite :5174)
-                           │  ├─ api.cdn-platform.local      │──▶ apps/api (Express :4000)
-                           │  └─ docs.cdn-platform.local     │──▶ docs (Docusaurus :3002)
+                           │  ├─ cdnetworks.vnso.vn          │──▶ apps/web (Next.js :3001)
+                           │  ├─ /document/                  │──▶ Docusaurus static embedded in web
+                           │  └─ console-cdnetworks.vnso.vn  │──▶ apps/console + /api/* (Vite + Express)
                            └─────────────────────────────────┘
                                             │
                        ┌────────────────────┼────────────────────┐
@@ -65,7 +64,7 @@ Nguyên tắc:
 ```
 
 **Cơ chế xác thực (SSO-ready)**:
-1. User đăng nhập tại `console.cdn-platform.local/login` → `POST api/v1/auth/login` trả `accessToken (JWT 15p)` + `refreshToken (httpOnly cookie 7d)`.
+1. User đăng nhập tại `https://console-cdnetworks.vnso.vn/login` → `POST /api/v1/auth/login` trả `accessToken (JWT 15p)` + `refreshToken (httpOnly cookie 7d)`.
 2. JWT mang `sub`, `email`, `role`, `tenantId`, `permissions[]` — verify bằng RS256 (rotate key qua JWKS endpoint `/.well-known/jwks.json`).
 3. SSO doanh nghiệp: `GET /api/v1/auth/sso/:idpId/start` → redirect SAML2/OIDC → callback `/api/v1/auth/sso/callback` → cấp JWT cùng schema → redirect về `console.*?token=...`.
 4. API key cho machine-to-machine: lưu `api_key_hash` + `api_key_preview` (không lưu plaintext), header `X-Api-Key`.
@@ -181,6 +180,13 @@ CDNetworks-platform/
 
 Quy ước:
 - **Mỗi app tự quản lý `package.json`**, được kết nối qua **pnpm workspaces**.
-- **Nginx vhost** chia theo subdomain: `www`, `console`, `api`, `docs`.
+- **Nginx vhost** production hiện dùng `cdnetworks.vnso.vn` cho landing/docs `/document/` và `console-cdnetworks.vnso.vn` cho console + `/api/*`; `docs-cdnetworks` đã bỏ.
 - **Tất cả env** tập trung ở `.env.example` ở root, mỗi app có `.env.local` override.
 - **`AI_CONTEXT.md`** liệt kê port, lệnh build, gotcha — agent đọc trước khi đụng code.
+
+### Console hiện tại
+
+- Dashboard đã thay placeholder bằng SVG traffic line chart và CSS status-code donut.
+- Sidebar route coverage: Reports, Edge Configurations, SSL, Tools, Shield, Flood, Media, Edge, DNS và Admin đều có page không 404.
+- Admin Branding: `/settings/branding`, lưu branding config client-side và áp dụng logo/favicon/title/theme runtime.
+- Access Logs: API list + download endpoint cùng origin, hỗ trợ JWT hoặc signed URL 5 phút cho SDK.

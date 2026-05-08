@@ -84,7 +84,7 @@ CDNetworks bán "EdgeWorkers". Để clone đúng tinh thần:
 
 | Mục                      | Mô tả                                                                          |
 |--------------------------|--------------------------------------------------------------------------------|
-| **Status page**          | Subdomain `status.cdnetworks-platform.local` (Statping/Cachet) đọc Prometheus  |
+| **Status page**          | Subpath `https://cdnetworks.vnso.vn/status/` hoặc subdomain riêng khi có DNS/SLO công khai |
 | **Webhook signing**      | HMAC v1 + replay-protection nonce, `services/webhook-svc`                      |
 | **IP allowlist**         | Cho api keys: trang **API Keys → Restrict IP**                                 |
 | **SCIM 2.0 provisioning**| Đồng bộ user từ Okta/Azure AD: `POST /scim/v2/Users` + `Groups`                |

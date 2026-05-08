@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Card, Form, Select, DatePicker, Button, Table, Space, Tag, message, Tooltip,
 } from 'antd';
@@ -37,6 +37,26 @@ export default function AccessLogs() {
   const [rows, setRows] = useState<LogRow[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const downloadLog = useCallback(async (row: LogRow) => {
+    if (!row.url) return;
+
+    try {
+      const response = await api.get<Blob>(row.url, { responseType: 'blob' });
+      const extension = row.format === 'gzip' ? 'gz' : 'txt';
+      const href = URL.createObjectURL(response.data);
+      const anchor = document.createElement('a');
+      anchor.href = href;
+      anchor.download = `${row.id}.${extension}`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(href);
+      message.success('Đã tải file log.');
+    } catch {
+      message.error('Không tải được file log.');
+    }
+  }, []);
+
   // Load danh sách hostname (từ API hoặc mock)
   useEffect(() => {
     api.get<{ items: string[] }>('/api/v1/hostnames')
@@ -73,7 +93,7 @@ export default function AccessLogs() {
       render: (_: unknown, row: LogRow) =>
         row.status === 'ready' ? (
           <Tooltip title="Tải file log">
-            <Button type="link" icon={<DownloadOutlined />} href={row.url} target="_blank">
+            <Button type="link" icon={<DownloadOutlined />} disabled={!row.url} onClick={() => void downloadLog(row)}>
               Download
             </Button>
           </Tooltip>
@@ -81,7 +101,7 @@ export default function AccessLogs() {
           <span style={{ color: '#999' }}>—</span>
         ),
     },
-  ], []);
+  ], [downloadLog]);
 
   async function onSearch(values: { hostname: string[]; range: [Dayjs, Dayjs]; timezone: string }) {
     if (!values.range || values.range.length !== 2) {

@@ -9,7 +9,7 @@ sidebar_position: 1
 ## Endpoint
 
 ```
-GET https://api.cdnetworks-platform.local/api/v1/accesslogs
+GET https://console-cdnetworks.vnso.vn/api/v1/accesslogs
 ```
 
 Trả về danh sách file log có thể tải về cho một hoặc nhiều hostname trong
@@ -37,7 +37,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ## Ví dụ request
 
 ```bash
-curl -G "https://api.cdnetworks-platform.local/api/v1/accesslogs" \
+curl -G "https://console-cdnetworks.vnso.vn/api/v1/accesslogs" \
   -H "Authorization: Bearer $TOKEN" \
   --data-urlencode "hostname=www.example.com,api.example.com" \
   --data-urlencode "from=2026-05-01T00:00:00Z" \
@@ -58,7 +58,7 @@ curl -G "https://api.cdnetworks-platform.local/api/v1/accesslogs" \
       "size": 12582912,
       "format": "gzip",
       "status": "ready",
-      "url": "https://logs.cdnetworks-platform.local/dl/log_001.gz?expires=..."
+      "url": "/api/v1/accesslogs/log_001/download"
     },
     {
       "id": "log_002",
@@ -67,7 +67,7 @@ curl -G "https://api.cdnetworks-platform.local/api/v1/accesslogs" \
       "size": 10485760,
       "format": "gzip",
       "status": "ready",
-      "url": "https://logs.cdnetworks-platform.local/dl/log_002.gz?expires=..."
+      "url": "/api/v1/accesslogs/log_002/download"
     }
   ]
 }
@@ -83,7 +83,7 @@ curl -G "https://api.cdnetworks-platform.local/api/v1/accesslogs" \
 | `size`   | Kích thước bytes |
 | `format` | `gzip` / `plain` |
 | `status` | `ready` / `processing` / `failed` |
-| `url`    | URL pre-signed, hiệu lực **5 phút**. Chỉ có khi `status=ready` |
+| `url`    | Download path same-origin, hiệu lực **5 phút** trong mock/prototype. Chỉ có khi `status=ready` |
 
 ## Mã lỗi
 
@@ -112,10 +112,13 @@ Payload được ký HMAC-SHA256 (header `X-CDN-Signature`).
 ```ts
 import { CDNClient } from '@cdn/sdk';
 
-const cdn = new CDNClient({ token: process.env.CDN_TOKEN! });
+const cdn = new CDNClient({
+  baseUrl: 'https://console-cdnetworks.vnso.vn',
+  token: process.env.CDN_TOKEN!,
+});
 
 const logs = await cdn.accessLogs.list({
-  hostnames: ['www.example.com'],
+  hostname: ['www.example.com'],
   from: '2026-05-01T00:00:00Z',
   to:   '2026-05-07T23:59:59Z',
   timezone: 'Asia/Ho_Chi_Minh',
@@ -123,7 +126,7 @@ const logs = await cdn.accessLogs.list({
 
 for (const f of logs.items) {
   if (f.status === 'ready' && f.url) {
-    await cdn.download(f.url, `./logs/${f.id}.gz`);
+    await cdn.accessLogs.download(f.id, `./logs/${f.id}.gz`);
   }
 }
 ```

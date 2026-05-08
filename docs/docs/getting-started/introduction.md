@@ -33,7 +33,7 @@ sidebar_position: 1
 
 ## Bắt đầu
 
-- [Đăng ký dùng thử 14 ngày](https://cdnetworks-platform.local/free-trial)
+- [Đăng ký dùng thử 14 ngày](https://cdnetworks.vnso.vn/free-trial)
 - [Hướng dẫn tải Access Logs](../tutorials/how-to-download-access-logs.md)
 - [API Reference: Access Logs](../api-reference/access-logs-api.md)
 

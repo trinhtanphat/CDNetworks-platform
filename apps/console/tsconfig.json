@@ -8,8 +8,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] }
+    "types": ["vite/client", "node"],
+    "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src"]
 }

@@ -26,6 +26,15 @@ pnpm -r --parallel dev
 # Test
 pnpm --filter ./tests/unit test
 pnpm --filter ./tests/e2e cy:open
+
+# Build validation hay dùng
+pnpm --filter @cdn/api build
+pnpm --filter @cdn/console exec tsc -p tsconfig.json --noEmit
+pnpm --filter @cdn/console build
+pnpm --filter @cdn/web build
+pnpm --filter @cdn/sdk build
+docker run --rm -e DOCS_TARGET=github-pages -v "$PWD/docs:/docs" -w /docs node:20-alpine \
+  sh -c "npm install -g pnpm@9 >/dev/null 2>&1 && pnpm install --no-frozen-lockfile --ignore-workspace >/dev/null && pnpm run build"
 ```
 
 ## Domain map — PRODUCTION (đã live)
@@ -55,6 +64,14 @@ GH Pages cho docs: workflow `.github/workflows/docs-pages.yml` tự động publ
   đã có blueprint trong `docker-compose.full.yml` và `infrastructure/` (Helm, ArgoCD,
   Terraform Anycast/GeoDNS, Vault, Linkerd mTLS, Litmus Chaos, backup, Prometheus/Alertmanager) — triển khai khi chuyển sang K8s/cluster nhiều node.
 
+## Console feature map
+
+- `/dashboard` và `/cdn/dashboard`: dashboard KPI + traffic chart + status donut.
+- `/reports/*`, `/edge-configurations/*`, `/traffic/*`, `/ssl/*`, `/tools/*`, `/shield/*`, `/flood/*`, `/media/*`, `/edge/*`, `/dns/*`: generic `FeaturePage` để không còn 404 từ sidebar.
+- `/access-logs`: query log theo hostname/date/timezone, download qua API same-origin.
+- `/settings/branding`: admin chỉnh logo/favicon/social logo, tên portal, màu primary/accent.
+- Official assets đang nằm trong `apps/web/public`, `apps/console/public`, `docs/static/img`; source gốc trong `brand/`.
+
 ## Auth flow
 
 JWT (RS256) + refresh httpOnly cookie. SSO SAML/OIDC ở `/api/v1/auth/sso/*`.
@@ -69,3 +86,4 @@ API key M2M qua header `X-Api-Key` (lưu hash + preview).
 - HTTPS bắt buộc qua `X-Forwarded-Proto`; smoke test trực tiếp `http://localhost` sẽ 301.
 - Khi seed/heal data, dùng DELETE orphan, KHÔNG UPDATE — tránh vi phạm UNIQUE constraint.
 - Access-log query mặc định giới hạn 31 ngày, vượt sẽ throw ngay từ client (`buildDateRangeQuery`).
+- Docusaurus cần Node >=20; terminal VPS hiện có thể là Node 18 nên validate docs bằng Docker Node 20 hoặc GitHub Actions.

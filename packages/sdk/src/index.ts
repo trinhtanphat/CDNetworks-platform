@@ -13,7 +13,7 @@
  *   import { CDNClient } from '@cdn/sdk';
  *
  *   const cdn = new CDNClient({
- *     baseUrl: 'https://api.cdnetworks-platform.local',
+ *     baseUrl: 'https://console-cdnetworks.vnso.vn',
  *     token:   process.env.CDN_TOKEN!,
  *   });
  *
@@ -172,7 +172,6 @@ export class CDNClient {
         if (res.ok) {
           const ct = res.headers.get('content-type') ?? '';
           if (ct.includes('application/json')) return (await res.json()) as T;
-          // @ts-expect-error — caller có thể mong text/binary
           return (await res.text()) as T;
         }
 
@@ -229,7 +228,7 @@ class AccessLogsAPI {
       hostname: q.hostname.join(','),
       from:     q.from,
       to:       q.to,
-      ...(q.timezone ? { timezone: q.timezone } : {}),
+      ...(q.timezone ? { tz: q.timezone } : {}),
       ...(q.page     ? { page:     String(q.page) }     : {}),
       ...(q.pageSize ? { pageSize: String(q.pageSize) } : {}),
     });

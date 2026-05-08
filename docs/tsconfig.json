@@ -1,0 +1,14 @@
+{
+  "extends": "@docusaurus/tsconfig",
+  "compilerOptions": {
+    "types": ["node"],
+    "skipLibCheck": true,
+    "ignoreDeprecations": "6.0"
+  },
+  "include": [
+    "src/**/*",
+    "docs/**/*",
+    "docusaurus.config.ts",
+    "sidebars.ts"
+  ]
+}

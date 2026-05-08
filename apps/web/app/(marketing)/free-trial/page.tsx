@@ -37,7 +37,7 @@ export default function FreeTrialPage() {
           <h2 className="text-2xl font-bold">Đăng ký tài khoản dùng thử</h2>
           <p className="mt-1 text-sm text-slate-500">
             Đã có tài khoản?{' '}
-            <a href="https://console.cdnetworks-platform.local" className="text-brand">
+            <a href="https://console-cdnetworks.vnso.vn" className="text-brand">
               Đăng nhập
             </a>
           </p>
