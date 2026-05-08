@@ -2,11 +2,13 @@ import type { Config } from '@docusaurus/types';
 import type { Options as PresetOptions, ThemeConfig } from '@docusaurus/preset-classic';
 import { themes as prismThemes } from 'prism-react-renderer';
 
+const isGitHubPages = process.env.DOCS_TARGET === 'github-pages';
+
 const config: Config = {
   title: 'CDNetworks Platform Docs',
   tagline: 'Web Performance · Cloud Security · Edge Computing',
-  url: 'https://cdnetworks.vnso.vn',
-  baseUrl: '/document/',
+  url: isGitHubPages ? 'https://trinhtanphat.github.io' : 'https://cdnetworks.vnso.vn',
+  baseUrl: isGitHubPages ? '/CDNetworks-platform/' : '/document/',
   favicon: 'img/favicon.ico',
   organizationName: 'trinhtanphat',
   projectName: 'CDNetworks-platform',
@@ -55,7 +57,7 @@ const config: Config = {
     docs: { sidebar: { autoCollapseCategories: true, hideable: true } },
     navbar: {
       title: 'CDNetworks Docs',
-      logo: { alt: 'CDN', src: 'img/logo.svg' },
+      logo: { alt: 'CDN', src: 'img/logo.png' },
       items: [
         { type: 'docSidebar', sidebarId: 'gettingStartedSidebar', position: 'left', label: 'Getting Started' },
         { type: 'docSidebar', sidebarId: 'tutorialsSidebar',      position: 'left', label: 'Tutorials' },
@@ -80,7 +82,7 @@ const config: Config = {
         {
           title: 'Docs',
           items: [
-            { label: 'Introduction',       to: '/getting-started/introduction' },
+            { label: 'Introduction',       to: '/' },
             { label: 'Download Logs',      to: '/tutorials/how-to-download-access-logs' },
             { label: 'Access Logs API',    to: '/api-reference/access-logs-api' },
           ],
