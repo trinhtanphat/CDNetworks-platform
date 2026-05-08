@@ -22,7 +22,7 @@ cdnetworks-platform/
 
 Nguyên tắc:
 - **Một root**, nhiều ứng dụng — chia theo **mục đích** (web, console, api, worker), không chia theo công nghệ.
-- **`docs/` ngang hàng với code**, deploy subdomain riêng (`docs.cdnetworks-platform.local`).
+- **`docs/` ngang hàng với code**, build ra HTML tĩnh bằng Docusaurus. Production hiện có 2 target: embedded trong landing tại `/document/` và GitHub Pages tại `/CDNetworks-platform/`.
 - **Infra-as-code** trong `infrastructure/` (nginx vhost, Dockerfile multi-stage, k8s manifest).
 - **`AI_CONTEXT.md`** ở root để mọi agent (và developer mới) đọc trước khi sửa code.
 
@@ -36,9 +36,9 @@ Nguyên tắc:
 | Worker (billing/log ETL) | Node.js + BullMQ (Redis) | Tách process khỏi API — usage tracker chạy chung API sẽ thiếu chính xác khi API restart |
 | Database | PostgreSQL 16 + Redis 7 | Postgres làm system-of-record; Redis cho cache + queue + session |
 | Docs | **Docusaurus 3** | MDX, versioning, search, i18n native |
-| Reverse proxy | Nginx + Cloudflare | Vhost split theo subdomain; HSTS qua `X-Forwarded-Proto` |
+| Reverse proxy | Nginx + Cloudflare | Vhost split theo subdomain; HSTS qua `X-Forwarded-Proto`; DNS phải trỏ về VPS `103.9.157.6` |
 | Container | Docker Compose (dev/prod) | Mỗi app có Dockerfile riêng, `docker-compose.yml` orchestrate |
-| CI/CD | GitHub Actions | Lint → test → build image → deploy |
+| CI/CD | GitHub Actions | Lint → test → build image → deploy; Docusaurus → GitHub Pages artifact |
 | Test | Jest + Vitest + Cypress + Playwright | Jest unit (logic), Vitest (Vite app), Cypress (e2e UI), Playwright (cross-browser smoke) |
 
 ### 1.3 Data flow & Authentication
