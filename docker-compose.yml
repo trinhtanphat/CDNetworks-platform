@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cdn
+      POSTGRES_PASSWORD: cdn
+      POSTGRES_DB: cdn_platform
+    ports: ["5432:5432"]
+    volumes: [pg_data:/var/lib/postgresql/data]
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: ../../infrastructure/docker/api.Dockerfile
+    env_file: .env
+    depends_on: [postgres, redis]
+    ports: ["4000:4000"]
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: ../../infrastructure/docker/web.Dockerfile
+    env_file: .env
+    ports: ["3001:3000"]
+
+  console:
+    build:
+      context: ./apps/console
+      dockerfile: ../../infrastructure/docker/console.Dockerfile
+    env_file: .env
+    ports: ["5174:80"]
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on: [api, web, console]
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./infrastructure/nginx/conf.d:/etc/nginx/conf.d:ro
+
+volumes:
+  pg_data:

@@ -1,0 +1,17 @@
+{
+  "item.label.Getting Started":  { "message": "Bắt đầu" },
+  "item.label.Tutorials":        { "message": "Hướng dẫn" },
+  "item.label.API Reference":    { "message": "Tham chiếu API" },
+  "item.label.Console":          { "message": "Console" },
+  "link.title.Docs":             { "message": "Tài liệu" },
+  "link.title.Product":          { "message": "Sản phẩm" },
+  "link.title.Community":        { "message": "Cộng đồng" },
+  "link.item.label.Introduction":     { "message": "Giới thiệu" },
+  "link.item.label.Download Logs":    { "message": "Tải log" },
+  "link.item.label.Access Logs API":  { "message": "API Access Logs" },
+  "link.item.label.Free Trial":       { "message": "Dùng thử" },
+  "link.item.label.Status":           { "message": "Tình trạng hệ thống" },
+  "link.item.label.GitHub":           { "message": "GitHub" },
+  "link.item.label.Twitter":          { "message": "Twitter" },
+  "link.item.label.Discord":          { "message": "Discord" }
+}

@@ -1,0 +1,72 @@
+name: Deploy Preview Environment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents:      read
+  pull-requests: write
+  deployments:   write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # ===========================================================================
+  deploy:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: preview-pr-${{ github.event.pull_request.number }}
+      url:  ${{ steps.deploy.outputs.preview_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'pnpm' }
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r build
+
+      # Ví dụ deploy lên Vercel preview cho marketing site,
+      # và Cloudflare Pages cho console/docs.
+      - name: Deploy web (Vercel)
+        id: deploy
+        run: |
+          npm i -g vercel@latest
+          PREVIEW=$(vercel deploy apps/web \
+            --token "${{ secrets.VERCEL_TOKEN }}" \
+            --yes 2>/dev/null | tail -n1)
+          echo "preview_url=$PREVIEW" >> "$GITHUB_OUTPUT"
+
+      - name: Comment preview URLs
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: preview-environments
+          message: |
+            ### 🚀 Preview environment ready
+
+            | App      | URL                                           |
+            |----------|-----------------------------------------------|
+            | Web      | ${{ steps.deploy.outputs.preview_url }}       |
+            | Console  | https://console-pr-${{ github.event.pull_request.number }}.preview.cdnetworks-platform.local |
+            | Docs     | https://docs-pr-${{ github.event.pull_request.number }}.preview.cdnetworks-platform.local    |
+            | API      | https://api-pr-${{ github.event.pull_request.number }}.preview.cdnetworks-platform.local     |
+
+            _Last update: $(date -u +"%Y-%m-%dT%H:%M:%SZ")_
+
+  # ===========================================================================
+  teardown:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Tearing down preview-pr-${{ github.event.pull_request.number }}"
+      - uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: preview-environments
+          message: '🧹 Preview environment for PR #${{ github.event.pull_request.number }} đã được dọn dẹp.'

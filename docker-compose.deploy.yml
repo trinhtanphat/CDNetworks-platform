@@ -1,0 +1,57 @@
+# =============================================================================
+# Production deploy stack cho VPS vnso.vn.
+# Build từ infrastructure/docker/*.Dockerfile và bind ra port local
+# 13601-13603, sau đó nginx vhost ở /root/dockercompose/nginx.conf reverse-proxy.
+# =============================================================================
+
+services:
+  cdn-web:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/web.Dockerfile
+    image: cdnetworks-platform/web:latest
+    container_name: cdnetworks-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_BASE: https://console-cdnetworks.vnso.vn
+      NEXT_PUBLIC_CONSOLE_URL: https://console-cdnetworks.vnso.vn
+      NEXT_PUBLIC_DOCS_URL: https://docs-cdnetworks.vnso.vn
+    ports:
+      - "172.17.0.1:13601:3000"
+    networks: [default]
+
+  cdn-console:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/console.Dockerfile
+      args:
+        VITE_API_BASE: /
+    image: cdnetworks-platform/console:latest
+    container_name: cdnetworks-console
+    restart: unless-stopped
+    ports:
+      - "172.17.0.1:13602:80"
+    depends_on: [cdn-api]
+    networks: [default]
+
+  cdn-api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api.Dockerfile
+    image: cdnetworks-platform/api:latest
+    container_name: cdnetworks-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_PORT: 4000
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-prod-please-use-32-chars-min}
+      CORS_ORIGINS: https://console-cdnetworks.vnso.vn,https://cdnetworks.vnso.vn
+    ports:
+      - "172.17.0.1:13603:4000"
+    networks: [default]
+
+networks:
+  default:
+    name: cdnetworks-platform

@@ -1,0 +1,45 @@
+[
+  {
+    "id": "log_001",
+    "hostname": "www.example.com",
+    "date": "2026-05-07",
+    "size": 12582912,
+    "format": "gzip",
+    "status": "ready",
+    "url": "https://logs.cdnetworks-platform.local/dl/log_001.gz"
+  },
+  {
+    "id": "log_002",
+    "hostname": "www.example.com",
+    "date": "2026-05-06",
+    "size": 10485760,
+    "format": "gzip",
+    "status": "ready",
+    "url": "https://logs.cdnetworks-platform.local/dl/log_002.gz"
+  },
+  {
+    "id": "log_003",
+    "hostname": "static.example.com",
+    "date": "2026-05-07",
+    "size": 8388608,
+    "format": "gzip",
+    "status": "processing"
+  },
+  {
+    "id": "log_004",
+    "hostname": "api.example.com",
+    "date": "2026-05-07",
+    "size": 4194304,
+    "format": "plain",
+    "status": "ready",
+    "url": "https://logs.cdnetworks-platform.local/dl/log_004.txt"
+  },
+  {
+    "id": "log_005",
+    "hostname": "api.example.com",
+    "date": "2026-05-05",
+    "size": 3145728,
+    "format": "gzip",
+    "status": "failed"
+  }
+]

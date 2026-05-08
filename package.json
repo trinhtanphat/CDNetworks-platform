@@ -1,0 +1,19 @@
+{
+  "name": "cdnetworks-platform",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "docs",
+    "tests/*"
+  ],
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter './apps/*' dev",
+    "build": "pnpm -r --filter './apps/*' build",
+    "lint": "pnpm -r lint",
+    "test:unit": "pnpm --filter ./tests/unit test",
+    "test:e2e": "pnpm --filter ./tests/e2e test"
+  }
+}

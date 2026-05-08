@@ -1,0 +1,10 @@
+{
+  "title": {
+    "message": "Tài liệu CDNetworks Platform",
+    "description": "Tiêu đề trang Docusaurus"
+  },
+  "tagline": {
+    "message": "Web Performance · Cloud Security · Edge Computing",
+    "description": "Tagline header"
+  }
+}

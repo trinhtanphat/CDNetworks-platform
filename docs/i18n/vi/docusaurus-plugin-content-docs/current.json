@@ -1,0 +1,5 @@
+{
+  "sidebar.gettingStartedSidebar.category.Getting Started": { "message": "Bắt đầu" },
+  "sidebar.tutorialsSidebar.category.Tutorials":            { "message": "Hướng dẫn" },
+  "sidebar.apiSidebar.category.API Reference":              { "message": "Tham chiếu API" }
+}

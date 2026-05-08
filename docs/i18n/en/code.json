@@ -1,0 +1,10 @@
+{
+  "title": {
+    "message": "CDNetworks Platform Docs",
+    "description": "Site title"
+  },
+  "tagline": {
+    "message": "Web Performance · Cloud Security · Edge Computing",
+    "description": "Tagline"
+  }
+}

@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #0a4cff;     /* CDNetworks blue */
+  --brand-dark: #0735b8;
+  --accent: #00c8b8;
+}
+
+.cdn-gradient {
+  background: linear-gradient(120deg, #0a4cff 0%, #00c8b8 100%);
+}
