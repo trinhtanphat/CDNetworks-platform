@@ -28,8 +28,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
       - name: Install pnpm
-        run: npm i -g pnpm@9 || corepack enable
-      - run: pnpm install --no-frozen-lockfile
+        run: npm i -g pnpm@9
+      - run: pnpm install --no-frozen-lockfile --ignore-workspace
       - run: pnpm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
