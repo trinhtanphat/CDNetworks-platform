@@ -26,9 +26,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm install --legacy-peer-deps --no-audit --no-fund
-      - run: npm run build
+        with: { node-version: '22' }
+      - name: Install pnpm
+        run: npm i -g pnpm@9 || corepack enable
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
