@@ -41,7 +41,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             <Link href="/free-trial" className="rounded-md bg-white px-6 py-3 font-bold text-brand-dark hover:bg-slate-100">
               Dùng thử miễn phí
             </Link>
-            <Link href="https://docs-cdnetworks.vnso.vn" className="rounded-md border-2 border-white px-6 py-3 font-bold text-white hover:bg-white/10">
+            <Link href="/document" className="rounded-md border-2 border-white px-6 py-3 font-bold text-white hover:bg-white/10">
               Xem tài liệu
             </Link>
           </div>

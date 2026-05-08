@@ -1,10 +1,21 @@
 # syntax=docker/dockerfile:1.6
 # =============================================================================
-# apps/web — Next.js 14 standalone build, multi-stage.
-# Final image runs `node server.js` from `.next/standalone`.
+# apps/web — Next.js 14 standalone build with embedded /document docs.
+# Final image runs `node server.js`. Docs (Docusaurus) are pre-built and
+# served as static files from /document path of the landing site.
 # =============================================================================
 
-# ---- Stage 1: deps -----------------------------------------------------------
+# ---- Stage 0: docs (Docusaurus) ---------------------------------------------
+FROM node:20-alpine AS docs-builder
+WORKDIR /docs
+RUN apk add --no-cache libc6-compat git
+COPY docs/package.json ./
+RUN --mount=type=cache,target=/root/.npm \
+    npm install --no-audit --no-fund --legacy-peer-deps
+COPY docs/. .
+RUN npm run build
+
+# ---- Stage 1: deps ----------------------------------------------------------
 FROM node:20-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
@@ -12,15 +23,17 @@ COPY apps/web/package.json apps/web/package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
-# ---- Stage 2: build ----------------------------------------------------------
+# ---- Stage 2: build (Next.js) -----------------------------------------------
 FROM node:20-alpine AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY apps/web/. .
+# Inject docs vào public/document để Next.js phục vụ static
+COPY --from=docs-builder /docs/build ./public/document
 RUN npm run build
 
-# ---- Stage 3: runtime --------------------------------------------------------
+# ---- Stage 3: runtime -------------------------------------------------------
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production \

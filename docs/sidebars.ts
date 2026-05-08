@@ -14,6 +14,12 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: ['getting-started/introduction'],
     },
+    {
+      type: 'category',
+      label: 'Infrastructure',
+      collapsed: false,
+      items: ['infrastructure/full-stack-deployment'],
+    },
   ],
 
   tutorialsSidebar: [

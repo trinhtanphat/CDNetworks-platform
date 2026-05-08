@@ -70,7 +70,7 @@ export default function Login() {
           layout="vertical"
           onFinish={onFinish}
           requiredMark={false}
-          initialValues={{ remember: true, email: 'admin@demo.com', password: 'demo1234' }}
+          initialValues={{ remember: true }}
         >
           <Form.Item
             name="email"

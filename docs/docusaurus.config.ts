@@ -5,8 +5,8 @@ import { themes as prismThemes } from 'prism-react-renderer';
 const config: Config = {
   title: 'CDNetworks Platform Docs',
   tagline: 'Web Performance · Cloud Security · Edge Computing',
-  url: 'https://docs-cdnetworks.vnso.vn',
-  baseUrl: '/',
+  url: 'https://cdnetworks.vnso.vn',
+  baseUrl: '/document/',
   favicon: 'img/favicon.ico',
   organizationName: 'trinhtanphat',
   projectName: 'CDNetworks-platform',
@@ -23,7 +23,12 @@ const config: Config = {
     },
   },
 
-  markdown: { mermaid: true },
+  markdown: {
+    mermaid: true,
+    hooks: {
+      onBrokenMarkdownImages: 'warn',
+    },
+  },
   themes: ['@docusaurus/theme-mermaid'],
 
   presets: [
@@ -34,8 +39,8 @@ const config: Config = {
           routeBasePath: '/',
           sidebarPath: './sidebars.ts',
           editUrl: 'https://github.com/trinhtanphat/CDNetworks-platform/edit/main/docs/',
-          showLastUpdateTime: true,
-          showLastUpdateAuthor: true,
+          showLastUpdateTime: false,
+          showLastUpdateAuthor: false,
         },
         blog: false,
         theme: { customCss: './src/css/custom.css' },
@@ -57,12 +62,12 @@ const config: Config = {
         { type: 'docSidebar', sidebarId: 'apiSidebar',            position: 'left', label: 'API Reference' },
         { type: 'localeDropdown', position: 'right' },
         {
-          href: 'https://console.cdnetworks-platform.local',
+          href: 'https://console-cdnetworks.vnso.vn',
           label: 'Console',
           position: 'right',
         },
         {
-          href: 'https://github.com/your-org/cdnetworks-platform',
+          href: 'https://github.com/trinhtanphat/CDNetworks-platform',
           'aria-label': 'GitHub repository',
           className: 'header-github-link',
           position: 'right',
@@ -83,9 +88,9 @@ const config: Config = {
         {
           title: 'Product',
           items: [
-            { label: 'Console',     href: 'https://console.cdnetworks-platform.local' },
-            { label: 'Free Trial',  href: 'https://cdnetworks-platform.local/free-trial' },
-            { label: 'Status',      href: 'https://status.cdnetworks-platform.local' },
+            { label: 'Console',     href: 'https://console-cdnetworks.vnso.vn' },
+            { label: 'Free Trial',  href: 'https://cdnetworks.vnso.vn/free-trial' },
+            { label: 'Status',      href: 'https://cdnetworks.vnso.vn/status' },
           ],
         },
         {

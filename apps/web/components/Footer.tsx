@@ -21,7 +21,7 @@ export default function Footer() {
         <div>
           <div className="font-semibold">Tài nguyên</div>
           <ul className="mt-2 space-y-1 text-slate-600">
-            <li><Link href="/docs">Documentation</Link></li>
+            <li><Link href="/document">Documentation</Link></li>
             <li><Link href="/blog">Blog</Link></li>
             <li><Link href="/support">Support</Link></li>
           </ul>

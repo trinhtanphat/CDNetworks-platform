@@ -1,0 +1,241 @@
+# =============================================================================
+# CDNetworks Platform — FULL ENTERPRISE STACK (Postgres + Redis + ClickHouse +
+# Kafka + OpenResty edge + Prometheus + Grafana).
+#
+# ⚠️  KHÔNG dùng cho VPS hiện tại. Đây là blueprint khi chuyển sang môi trường
+# cluster (K8s/multi-node). Khi sẵn sàng chỉ cần:
+#     cp .env.example .env && edit .env
+#     docker compose -f docker-compose.full.yml --env-file .env up -d
+# =============================================================================
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+    compress: "true"
+
+services:
+  # ============================ DATA LAYER =================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: cdn-postgres
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cdn}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_DB: ${POSTGRES_DB:-cdn}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./infrastructure/sql/init-postgres.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    networks: [cdn-data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cdn}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: cdn-redis
+    restart: unless-stopped
+    logging: *default-logging
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD required}"]
+    volumes:
+      - redis-data:/data
+    networks: [cdn-data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8-alpine
+    container_name: cdn-clickhouse
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-cdn}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?CLICKHOUSE_PASSWORD required}
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-cdn_logs}
+    volumes:
+      - ch-data:/var/lib/clickhouse
+      - ./infrastructure/sql/init-clickhouse.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
+    networks: [cdn-data]
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8123/ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  # ============================ MESSAGE BUS ================================
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: cdn-kafka
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    volumes:
+      - kafka-data:/bitnami/kafka
+    networks: [cdn-data]
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+
+  # ============================ EDGE / DATA PLANE ===========================
+  openresty-edge:
+    image: openresty/openresty:1.25.3.1-alpine-fat
+    container_name: cdn-edge
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      redis: { condition: service_healthy }
+    volumes:
+      - ./infrastructure/openresty/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+      - ./infrastructure/openresty/lua:/etc/nginx/lua:ro
+      - ./infrastructure/openresty/ssl:/etc/nginx/ssl:ro
+      - edge-cache:/var/cache/nginx
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    networks: [cdn-data, cdn-edge]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ============================ CONTROL PLANE ===============================
+  cdn-api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api.Dockerfile
+    image: cdnetworks-platform/api:latest
+    container_name: cdn-api-full
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+      kafka:    { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      API_PORT: 4000
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@vnso.vn}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD required}
+      DATABASE_URL: postgres://${POSTGRES_USER:-cdn}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cdn}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CLICKHOUSE_URL: http://${CLICKHOUSE_USER:-cdn}:${CLICKHOUSE_PASSWORD}@clickhouse:8123/${CLICKHOUSE_DB:-cdn_logs}
+      KAFKA_BROKERS: kafka:9092
+    networks: [cdn-data]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  cdn-worker:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api.Dockerfile
+    image: cdnetworks-platform/api:latest
+    container_name: cdn-worker
+    restart: unless-stopped
+    logging: *default-logging
+    command: ["node", "dist/worker.js"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+      kafka:    { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-cdn}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cdn}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CLICKHOUSE_URL: http://${CLICKHOUSE_USER:-cdn}:${CLICKHOUSE_PASSWORD}@clickhouse:8123/${CLICKHOUSE_DB:-cdn_logs}
+      KAFKA_BROKERS: kafka:9092
+    networks: [cdn-data]
+
+  cdn-console:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/console.Dockerfile
+      args: { VITE_API_BASE: / }
+    image: cdnetworks-platform/console:latest
+    container_name: cdn-console-full
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      cdn-api: { condition: service_healthy }
+    networks: [cdn-data]
+
+  cdn-web:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/web.Dockerfile
+    image: cdnetworks-platform/web:latest
+    container_name: cdn-web-full
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    networks: [cdn-data]
+
+  # ============================ OBSERVABILITY ===============================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cdn-prometheus
+    restart: unless-stopped
+    logging: *default-logging
+    volumes:
+      - ./infrastructure/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prom-data:/prometheus
+    networks: [cdn-data]
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cdn-grafana
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on: [prometheus]
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?GRAFANA_PASSWORD required}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks: [cdn-data]
+
+volumes:
+  pg-data:
+  redis-data:
+  ch-data:
+  kafka-data:
+  edge-cache:
+  prom-data:
+  grafana-data:
+
+networks:
+  cdn-data:
+    name: cdn-data
+  cdn-edge:
+    name: cdn-edge

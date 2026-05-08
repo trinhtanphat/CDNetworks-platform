@@ -1,0 +1,38 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels: { cluster: 'cdnetworks-platform' }
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs: [{ targets: ['localhost:9090'] }]
+
+  - job_name: 'cdn-api'
+    metrics_path: /metrics
+    static_configs: [{ targets: ['cdn-api-full:4000'] }]
+
+  - job_name: 'cdn-worker'
+    metrics_path: /metrics
+    static_configs: [{ targets: ['cdn-worker:4000'] }]
+
+  - job_name: 'openresty-edge'
+    metrics_path: /metrics
+    static_configs: [{ targets: ['cdn-edge:9145'] }]
+
+  - job_name: 'postgres'
+    static_configs: [{ targets: ['postgres:9187'] }]
+
+  - job_name: 'redis'
+    static_configs: [{ targets: ['redis:9121'] }]
+
+  - job_name: 'clickhouse'
+    metrics_path: /metrics
+    static_configs: [{ targets: ['clickhouse:9363'] }]
+
+  - job_name: 'kafka'
+    static_configs: [{ targets: ['kafka:9308'] }]
+
+# Alerting (thêm Alertmanager khi cluster sẵn sàng)
+# alerting:
+#   alertmanagers:
+#     - static_configs: [{ targets: ['alertmanager:9093'] }]

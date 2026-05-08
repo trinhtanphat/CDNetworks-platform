@@ -1,8 +1,15 @@
 # =============================================================================
-# Production deploy stack cho VPS vnso.vn.
-# Build từ infrastructure/docker/*.Dockerfile và bind ra port local
-# 13601-13603, sau đó nginx vhost ở /root/dockercompose/nginx.conf reverse-proxy.
+# Production deploy stack cho VPS vnso.vn (3 services light).
+# Build từ infrastructure/docker/*.Dockerfile, bind 172.17.0.1:1360x.
+# Reverse proxy thật ngoài: /root/dockercompose/nginx.conf (xiaozhi-esp32-server-web).
 # =============================================================================
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+    compress: "true"
 
 services:
   cdn-web:
@@ -12,15 +19,22 @@ services:
     image: cdnetworks-platform/web:latest
     container_name: cdnetworks-web
     restart: unless-stopped
+    logging: *default-logging
     environment:
       NODE_ENV: production
       PORT: 3000
       NEXT_PUBLIC_API_BASE: https://console-cdnetworks.vnso.vn
       NEXT_PUBLIC_CONSOLE_URL: https://console-cdnetworks.vnso.vn
-      NEXT_PUBLIC_DOCS_URL: https://docs-cdnetworks.vnso.vn
+      NEXT_PUBLIC_DOCS_URL: https://cdnetworks.vnso.vn/document
     ports:
       - "172.17.0.1:13601:3000"
     networks: [default]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   cdn-console:
     build:
@@ -31,10 +45,19 @@ services:
     image: cdnetworks-platform/console:latest
     container_name: cdnetworks-console
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "172.17.0.1:13602:80"
-    depends_on: [cdn-api]
+    depends_on:
+      cdn-api:
+        condition: service_healthy
     networks: [default]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   cdn-api:
     build:
@@ -43,14 +66,23 @@ services:
     image: cdnetworks-platform/api:latest
     container_name: cdnetworks-api
     restart: unless-stopped
+    logging: *default-logging
     environment:
       NODE_ENV: production
       API_PORT: 4000
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-prod-please-use-32-chars-min}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET phải được set trong .env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@vnso.vn}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD phải được set trong .env}
       CORS_ORIGINS: https://console-cdnetworks.vnso.vn,https://cdnetworks.vnso.vn
     ports:
       - "172.17.0.1:13603:4000"
     networks: [default]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 networks:
   default:

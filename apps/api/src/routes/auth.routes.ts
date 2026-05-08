@@ -6,14 +6,17 @@ import { z } from 'zod';
 const r = Router();
 
 // ⚠️ DEV-ONLY in-memory user store. Production: dùng Postgres + bảng users.
+// Admin user lấy từ env ADMIN_EMAIL / ADMIN_PASSWORD (xem .env / .env.example).
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@vnso.vn').toLowerCase();
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@@3224@@';
+
 const USERS = [
   {
     id: 'u_1',
-    email: 'admin@demo.com',
-    // password = "demo1234"
-    passwordHash: bcrypt.hashSync('demo1234', 10),
+    email: ADMIN_EMAIL,
+    passwordHash: bcrypt.hashSync(ADMIN_PASSWORD, 10),
     role: 'admin' as const,
-    tenantId: 't_demo',
+    tenantId: 't_root',
   },
 ];
 

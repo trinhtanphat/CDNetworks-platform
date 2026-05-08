@@ -62,7 +62,7 @@ export default function Header() {
             </button>
           ))}
           <Link href="/pricing" className="hover:text-brand">Pricing</Link>
-          <Link href="/docs" className="hover:text-brand">Docs</Link>
+          <Link href="/document" className="hover:text-brand">Docs</Link>
         </nav>
 
         <div className="flex items-center gap-3">
