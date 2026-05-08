@@ -1,0 +1,104 @@
+{{- if .Values.api.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-api
+  labels:
+    app.kubernetes.io/name: cdn-api
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.api.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  selector:
+    matchLabels: { app.kubernetes.io/name: cdn-api }
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cdn-api
+      annotations:
+        # Linkerd auto-injection (mTLS) — chỉ apply khi mesh.linkerd.enabled
+        {{- if .Values.mesh.linkerd.enabled }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        # Vault Agent injector — kéo secret từ Vault thay envFromSecret
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: cdn-api
+        vault.hashicorp.com/agent-inject-secret-env: secret/cdnetworks/api
+        vault.hashicorp.com/agent-inject-template-env: |
+          {{`{{- with secret "secret/cdnetworks/api" -}}
+          export JWT_SECRET="{{ .Data.data.jwt_secret }}"
+          export ADMIN_EMAIL="{{ .Data.data.admin_email }}"
+          export ADMIN_PASSWORD="{{ .Data.data.admin_password }}"
+          export DATABASE_URL="{{ .Data.data.database_url }}"
+          export REDIS_URL="{{ .Data.data.redis_url }}"
+          {{- end }}`}}
+    spec:
+      imagePullSecrets: {{- toYaml .Values.global.imagePullSecrets | nindent 8 }}
+      serviceAccountName: {{ .Release.Name }}-api
+      containers:
+        - name: api
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["sh", "-c", "source /vault/secrets/env && exec node dist/server.js"]
+          ports: [{ containerPort: {{ .Values.api.port }}, name: http }]
+          envFrom:
+            - secretRef: { name: {{ .Values.api.envFromSecret }} }
+          resources: {{- toYaml .Values.api.resources | nindent 12 }}
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          # Graceful shutdown: SIGTERM → đóng listener, drain in-flight, exit.
+          lifecycle:
+            preStop:
+              exec: { command: ["sh", "-c", "sleep 10"] }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: { drop: ["ALL"] }
+      terminationGracePeriodSeconds: 60
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector: { matchLabels: { app.kubernetes.io/name: cdn-api } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: {{ .Release.Name }}-api }
+spec:
+  selector: { app.kubernetes.io/name: cdn-api }
+  ports: [{ port: 4000, targetPort: http }]
+---
+{{- if .Values.api.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: { name: {{ .Release.Name }}-api }
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Release.Name }}-api
+  minReplicas: {{ .Values.api.hpa.min }}
+  maxReplicas: {{ .Values.api.hpa.max }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: {{ .Values.api.hpa.targetCPUUtilizationPercentage }} }
+{{- end }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: { name: {{ .Release.Name }}-api }
+spec:
+  minAvailable: {{ .Values.api.podDisruptionBudget.minAvailable }}
+  selector: { matchLabels: { app.kubernetes.io/name: cdn-api } }
+{{- end }}

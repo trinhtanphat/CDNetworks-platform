@@ -1,0 +1,95 @@
+groups:
+  - name: cdnetworks-platform
+    interval: 30s
+    rules:
+
+      # ----- API / Console -----
+      - alert: APIHighErrorRate
+        expr: |
+          (sum(rate(http_requests_total{job="cdn-api",status=~"5.."}[5m]))
+           /
+           sum(rate(http_requests_total{job="cdn-api"}[5m]))) > 0.01
+        for: 5m
+        labels: { severity: critical, service: api }
+        annotations:
+          summary: "API 5xx > 1% trong 5 phút"
+          description: "Tỉ lệ 5xx của cdn-api vượt 1% — kiểm tra logs ngay."
+
+      - alert: APIDown
+        expr: up{job="cdn-api"} == 0
+        for: 2m
+        labels: { severity: critical, service: api }
+        annotations:
+          summary: "API không phản hồi"
+          description: "Instance {{ $labels.instance }} down >2m."
+
+      - alert: APILatencyP99High
+        expr: histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket{job="cdn-api"}[5m]))) > 1
+        for: 10m
+        labels: { severity: warning, service: api }
+        annotations:
+          summary: "API p99 latency > 1s"
+
+      # ----- Edge OpenResty -----
+      - alert: EdgeDown
+        expr: up{job="openresty-edge"} == 0
+        for: 1m
+        labels: { severity: critical, service: edge }
+        annotations:
+          summary: "Edge node {{ $labels.instance }} DOWN"
+          description: "OpenResty không scrape được — kiểm tra anycast announce + node."
+
+      - alert: EdgeCacheHitLow
+        expr: avg(rate(nginx_http_upstream_cache_status_total{cache_status="HIT"}[10m]))
+              /
+              avg(rate(nginx_http_upstream_cache_status_total[10m])) < 0.5
+        for: 30m
+        labels: { severity: warning, service: edge }
+        annotations:
+          summary: "Edge cache HIT < 50% trong 30 phút"
+
+      # ----- Database -----
+      - alert: PostgresReplicationLag
+        expr: pg_replication_lag_seconds > 60
+        for: 5m
+        labels: { severity: warning, service: postgres }
+        annotations: { summary: "Postgres replica lag > 60s" }
+
+      - alert: PostgresConnectionsHigh
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 5m
+        labels: { severity: warning, service: postgres }
+
+      # ----- Redis -----
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels: { severity: critical, service: redis }
+        annotations: { summary: "Redis down — Edge SSL/origin lookup sẽ fail-open!" }
+
+      # ----- Kafka / Pipeline -----
+      - alert: KafkaConsumerLag
+        expr: kafka_consumergroup_lag{consumergroup="clickhouse-access-logs"} > 1000000
+        for: 10m
+        labels: { severity: warning, service: kafka }
+        annotations: { summary: "ClickHouse consumer lag > 1M messages" }
+
+      # ----- ClickHouse -----
+      - alert: ClickHouseInsertErrors
+        expr: rate(clickhouse_failed_insert_query_total[5m]) > 1
+        for: 5m
+        labels: { severity: critical, service: clickhouse }
+
+      # ----- Cert expiring -----
+      - alert: SSLCertExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry - time() < 7 * 24 * 3600
+        for: 1h
+        labels: { severity: warning, service: ssl }
+        annotations: { summary: "SSL cert {{ $labels.instance }} hết hạn < 7 ngày" }
+
+      # ----- Backup -----
+      - alert: PostgresBackupMissing
+        expr: time() - postgres_backup_last_success_timestamp > 36 * 3600
+        for: 0s
+        labels: { severity: critical, service: backup }
+        annotations: { summary: "Postgres backup missing >36h" }

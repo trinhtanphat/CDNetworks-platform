@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: cdnetworks
+spec:
+  # 02:00 UTC mỗi ngày
+  schedule: "0 2 * * *"
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 7
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: postgres-backup
+          containers:
+            - name: backup
+              image: ghcr.io/trinhtanphat/cdnetworks-backup:latest   # postgres + aws-cli + age
+              command: ["/opt/cdnetworks/postgres-backup.sh"]
+              env:
+                - { name: PGHOST,     value: cdn-postgresql.cdnetworks }
+                - { name: PGDATABASE, value: cdn }
+                - { name: S3_BUCKET,  value: vnso-cdnetworks-backup }
+                - { name: S3_PREFIX,  value: postgres }
+                - name: PGUSER
+                  valueFrom: { secretKeyRef: { name: cdn-postgres-auth, key: username } }
+                - name: PGPASSWORD
+                  valueFrom: { secretKeyRef: { name: cdn-postgres-auth, key: password } }
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom: { secretKeyRef: { name: backup-aws, key: access_key } }
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom: { secretKeyRef: { name: backup-aws, key: secret_key } }
+                - { name: AWS_DEFAULT_REGION, value: ap-southeast-1 }
+                - name: AGE_RECIPIENT
+                  valueFrom: { secretKeyRef: { name: backup-age, key: recipient } }
+                - name: ALERT_WEBHOOK
+                  valueFrom: { secretKeyRef: { name: alerts, key: slack_webhook } }
+              resources:
+                requests: { cpu: 200m, memory: 256Mi }
+                limits:   { cpu: 1000m, memory: 1Gi }

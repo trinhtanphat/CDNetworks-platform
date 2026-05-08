@@ -1,0 +1,45 @@
+# =============================================================================
+# ArgoCD Application — GitOps cho CDNetworks Platform.
+# Khi cluster K8s sẵn sàng:
+#   kubectl apply -f infrastructure/argocd/application.yaml
+# ArgoCD sẽ tự sync repo → cluster và auto-prune.
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cdnetworks-platform
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/trinhtanphat/CDNetworks-platform.git
+    targetRevision: main
+    path: infrastructure/helm/cdnetworks
+    helm:
+      valueFiles: [values.yaml, values.production.yaml]
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cdnetworks
+  syncPolicy:
+    automated: { prune: true, selfHeal: true, allowEmpty: false }
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff: { duration: 10s, factor: 2, maxDuration: 5m }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata: { name: cdnetworks, namespace: argocd }
+spec:
+  description: CDNetworks Platform multi-environment
+  sourceRepos:
+    - https://github.com/trinhtanphat/CDNetworks-platform.git
+  destinations:
+    - { namespace: cdnetworks, server: https://kubernetes.default.svc }
+    - { namespace: cdnetworks-edge, server: https://kubernetes.default.svc }
+  clusterResourceWhitelist:
+    - { group: '*', kind: '*' }

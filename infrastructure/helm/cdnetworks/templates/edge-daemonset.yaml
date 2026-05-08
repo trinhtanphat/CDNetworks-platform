@@ -1,0 +1,51 @@
+{{- if .Values.edge.enabled }}
+# =============================================================================
+# OpenResty Edge — DaemonSet chạy ở các node có label cdn.role=edge.
+# hostNetwork=true để Anycast IP route trực tiếp tới node.
+# =============================================================================
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Release.Name }}-edge
+  labels: { app.kubernetes.io/name: cdn-edge }
+spec:
+  selector:
+    matchLabels: { app.kubernetes.io/name: cdn-edge }
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 1 }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: cdn-edge }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9145"
+    spec:
+      hostNetwork: {{ .Values.edge.hostNetwork }}
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector: {{- toYaml .Values.edge.nodeSelector | nindent 8 }}
+      tolerations: {{- toYaml .Values.edge.tolerations | nindent 8 }}
+      containers:
+        - name: openresty
+          image: {{ .Values.edge.image }}
+          ports:
+            - { containerPort: 80,   hostPort: 80,   name: http }
+            - { containerPort: 443,  hostPort: 443,  name: https }
+            - { containerPort: 9145, name: metrics }
+          resources: {{- toYaml .Values.edge.resources | nindent 12 }}
+          volumeMounts:
+            - { name: nginx-conf, mountPath: /usr/local/openresty/nginx/conf/nginx.conf, subPath: nginx.conf, readOnly: true }
+            - { name: lua-scripts, mountPath: /etc/nginx/lua, readOnly: true }
+            - { name: cache-volume, mountPath: /var/cache/nginx }
+          env:
+            - { name: REDIS_HOST, value: "{{ .Release.Name }}-redis-headless" }
+            - name: REDIS_PASSWORD
+              valueFrom: { secretKeyRef: { name: cdn-redis-auth, key: redis-password } }
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 15
+      volumes:
+        - { name: nginx-conf, configMap: { name: {{ .Release.Name }}-edge-nginx } }
+        - { name: lua-scripts, configMap: { name: {{ .Release.Name }}-edge-lua } }
+        - { name: cache-volume, emptyDir: { sizeLimit: 10Gi } }
+{{- end }}

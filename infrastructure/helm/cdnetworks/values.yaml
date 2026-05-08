@@ -1,0 +1,119 @@
+# =============================================================================
+# values.yaml — defaults. Override bằng values.production.yaml ở cluster thật.
+# =============================================================================
+global:
+  domain: vnso.vn
+  imageRegistry: ghcr.io/trinhtanphat
+  imagePullSecrets:
+    - name: ghcr-pull
+
+image:
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# ----- Control plane apps ----------------------------------------------------
+api:
+  enabled: true
+  replicas: 3
+  image: cdnetworks-api
+  port: 4000
+  resources:
+    requests: { cpu: 200m, memory: 256Mi }
+    limits:   { cpu: 1000m, memory: 1Gi }
+  hpa:
+    enabled: true
+    min: 3
+    max: 20
+    targetCPUUtilizationPercentage: 70
+  envFromSecret: cdn-api-env
+  podDisruptionBudget:
+    minAvailable: 2
+
+worker:
+  enabled: true
+  replicas: 2
+  command: ["node", "dist/worker.js"]
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+
+console:
+  enabled: true
+  replicas: 2
+  image: cdnetworks-console
+  ingressHost: console-cdnetworks.vnso.vn
+
+web:
+  enabled: true
+  replicas: 2
+  image: cdnetworks-web
+  ingressHost: cdnetworks.vnso.vn
+
+# ----- Data plane (Edge) — chạy ở mỗi PoP ------------------------------------
+edge:
+  enabled: true
+  kind: DaemonSet            # 1 pod / node để có hostNetwork
+  hostNetwork: true
+  image: openresty/openresty:1.25.3.1-alpine-fat
+  resources:
+    requests: { cpu: 500m, memory: 512Mi }
+    limits:   { cpu: 4000m, memory: 4Gi }
+  nodeSelector:
+    cdn.role: edge
+  tolerations:
+    - key: cdn.role
+      operator: Equal
+      value: edge
+      effect: NoSchedule
+
+# ----- Subcharts -------------------------------------------------------------
+postgresql:
+  enabled: true
+  architecture: replication
+  auth:
+    existingSecret: cdn-postgres-auth
+  primary:
+    persistence: { size: 100Gi, storageClass: fast-ssd }
+  readReplicas:
+    replicaCount: 2
+
+redis:
+  enabled: true
+  architecture: replication
+  sentinel: { enabled: true }
+  auth: { existingSecret: cdn-redis-auth }
+
+kafka:
+  enabled: true
+  controller: { replicaCount: 3 }
+  broker: { replicaCount: 3 }
+  persistence: { size: 200Gi, storageClass: fast-ssd }
+
+clickhouse:
+  enabled: true
+  shards: 2
+  replicaCount: 2
+  zookeeper: { enabled: true, replicaCount: 3 }
+  persistence: { size: 500Gi, storageClass: fast-ssd }
+
+monitoring:
+  enabled: true
+  grafana:
+    adminPassword: change-me-via-vault
+
+# ----- Service mesh (mTLS) ---------------------------------------------------
+mesh:
+  linkerd:
+    enabled: false   # bật khi cluster đã cài linkerd
+  istio:
+    enabled: false   # alternative
+
+# ----- Ingress ---------------------------------------------------------------
+ingress:
+  className: nginx
+  tls:
+    enabled: true
+    issuer: letsencrypt-prod    # cert-manager ClusterIssuer
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 50m
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"

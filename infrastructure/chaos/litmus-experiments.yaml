@@ -1,0 +1,99 @@
+# =============================================================================
+# LitmusChaos experiments — chỉ chạy ở staging hoặc production sau khi có HA.
+# Cài: helm install litmus litmuschaos/litmus -n litmus --create-namespace
+# =============================================================================
+
+# 1) Pod kill — random kill cdn-api pod, đo recovery
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: cdn-api-pod-kill
+  namespace: cdnetworks
+spec:
+  appinfo:
+    appns: cdnetworks
+    applabel: 'app.kubernetes.io/name=cdn-api'
+    appkind: deployment
+  engineState: 'active'
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-delete
+      spec:
+        components:
+          env:
+            - { name: TOTAL_CHAOS_DURATION, value: '60' }
+            - { name: CHAOS_INTERVAL,       value: '15' }
+            - { name: PODS_AFFECTED_PERC,   value: '50' }
+            - { name: FORCE,                value: 'false' }
+        probe:
+          - name: api-health-probe
+            type: httpProbe
+            mode: Continuous
+            httpProbe/inputs:
+              url: http://cdn-api.cdnetworks:4000/health
+              insecureSkipVerify: true
+              method: { get: { criteria: ==, responseCode: '200' } }
+            runProperties:
+              probeTimeout: 2
+              interval: 1
+              retry: 1
+              probePollingInterval: 2
+---
+# 2) Network latency — inject 500ms latency vào cdn-api
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata: { name: cdn-api-network-latency, namespace: cdnetworks }
+spec:
+  appinfo:
+    appns: cdnetworks
+    applabel: 'app.kubernetes.io/name=cdn-api'
+    appkind: deployment
+  engineState: 'active'
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-network-latency
+      spec:
+        components:
+          env:
+            - { name: TOTAL_CHAOS_DURATION, value: '120' }
+            - { name: NETWORK_LATENCY,      value: '500' }
+            - { name: JITTER,               value: '50' }
+---
+# 3) Postgres CPU hog — verify replica failover
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata: { name: postgres-cpu-hog, namespace: cdnetworks }
+spec:
+  appinfo:
+    appns: cdnetworks
+    applabel: 'app.kubernetes.io/name=postgresql,role=primary'
+    appkind: statefulset
+  engineState: 'active'
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-cpu-hog
+      spec:
+        components:
+          env:
+            - { name: TOTAL_CHAOS_DURATION, value: '60' }
+            - { name: CPU_CORES,            value: '2' }
+---
+# 4) Disk fill trên edge node — verify cache eviction
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata: { name: edge-disk-fill, namespace: cdnetworks }
+spec:
+  appinfo:
+    appns: cdnetworks
+    applabel: 'app.kubernetes.io/name=cdn-edge'
+    appkind: daemonset
+  engineState: 'active'
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: disk-fill
+      spec:
+        components:
+          env:
+            - { name: TOTAL_CHAOS_DURATION,     value: '120' }
+            - { name: FILL_PERCENTAGE,          value: '80' }
+            - { name: TARGET_CONTAINER,         value: 'openresty' }

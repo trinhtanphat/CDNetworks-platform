@@ -1,0 +1,40 @@
+resources:
+  - name: cdnetworks-landing
+    type: keyword
+    keywords:
+      - https://cdnetworks.vnso.vn/
+      - https://cdnetworks.vnso.vn/document/
+    interval: 60
+    locations: [Singapore, Frankfurt, Dallas]
+    expectedKeyword: 'CDNetworks'
+    expectedStatusCode: 200
+    alertContacts: [slack-cdn, telegram-critical]
+
+  - name: cdnetworks-console
+    type: keyword
+    keywords:
+      - https://console-cdnetworks.vnso.vn/
+    interval: 60
+    locations: [Singapore, Frankfurt, Dallas]
+    expectedKeyword: 'Console'
+    expectedStatusCode: 200
+    alertContacts: [slack-cdn, telegram-critical]
+
+  - name: cdnetworks-api-health
+    type: http
+    url: https://console-cdnetworks.vnso.vn/health
+    interval: 60
+    locations: [Singapore, Frankfurt, Dallas]
+    expectedStatusCode: 200
+    alertContacts: [slack-cdn, telegram-critical]
+
+  - name: cdnetworks-ssl-cert
+    type: ssl
+    domains:
+      - cdnetworks.vnso.vn
+      - console-cdnetworks.vnso.vn
+    daysBeforeExpiry: 14
+    alertContacts: [slack-cdn]
+
+# Ghi chú: file này dùng với UptimeRobot Terraform provider hoặc API.
+# Free tier: 50 monitor, 5-min interval. Pro $7/mo: 1-min interval.

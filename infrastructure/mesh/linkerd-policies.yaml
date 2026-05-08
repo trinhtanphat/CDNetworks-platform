@@ -1,0 +1,69 @@
+# =============================================================================
+# Linkerd service mesh — mTLS auto giữa các service trong namespace cdnetworks.
+# Cài Linkerd:
+#   curl -sL run.linkerd.io/install | sh
+#   linkerd install --crds | kubectl apply -f -
+#   linkerd install | kubectl apply -f -
+#   linkerd viz install | kubectl apply -f -
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cdnetworks
+  annotations:
+    linkerd.io/inject: enabled       # auto inject mọi pod trong NS
+  labels:
+    config.linkerd.io/admission-webhooks: enabled
+---
+# Authorization: chỉ cho cdn-console + cdn-web gọi cdn-api
+apiVersion: policy.linkerd.io/v1beta3
+kind: Server
+metadata: { name: cdn-api, namespace: cdnetworks }
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: cdn-api } }
+  port: http
+  proxyProtocol: HTTP/1
+---
+apiVersion: policy.linkerd.io/v1beta3
+kind: AuthorizationPolicy
+metadata: { name: cdn-api-allow-frontend, namespace: cdnetworks }
+spec:
+  targetRef: { group: policy.linkerd.io, kind: Server, name: cdn-api }
+  requiredAuthenticationRefs:
+    - name: cdn-api-allowed-clients
+      kind: MeshTLSAuthentication
+      group: policy.linkerd.io
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata: { name: cdn-api-allowed-clients, namespace: cdnetworks }
+spec:
+  identities:
+    - cdn-console.cdnetworks.serviceaccount.identity.linkerd.cluster.local
+    - cdn-web.cdnetworks.serviceaccount.identity.linkerd.cluster.local
+    - cdn-edge.cdnetworks.serviceaccount.identity.linkerd.cluster.local
+---
+# Postgres + Redis: chỉ cdn-api + cdn-worker được kết nối
+apiVersion: policy.linkerd.io/v1beta3
+kind: Server
+metadata: { name: cdn-postgres, namespace: cdnetworks }
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: postgresql } }
+  port: tcp-postgresql
+  proxyProtocol: opaque
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata: { name: db-clients, namespace: cdnetworks }
+spec:
+  identities:
+    - cdn-api.cdnetworks.serviceaccount.identity.linkerd.cluster.local
+    - cdn-worker.cdnetworks.serviceaccount.identity.linkerd.cluster.local
+---
+apiVersion: policy.linkerd.io/v1beta3
+kind: AuthorizationPolicy
+metadata: { name: pg-allow-app, namespace: cdnetworks }
+spec:
+  targetRef: { group: policy.linkerd.io, kind: Server, name: cdn-postgres }
+  requiredAuthenticationRefs:
+    - { name: db-clients, kind: MeshTLSAuthentication, group: policy.linkerd.io }

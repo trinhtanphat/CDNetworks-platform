@@ -1,0 +1,34 @@
+# =============================================================================
+# Helm chart — CDNetworks Platform Control Plane (web, console, api, worker).
+# Khi chuyển K8s, deploy bằng:
+#   helm upgrade --install cdn ./infrastructure/helm/cdnetworks \
+#     -n cdnetworks --create-namespace \
+#     -f values.production.yaml
+# =============================================================================
+apiVersion: v2
+name: cdnetworks
+description: CDNetworks Platform — control + data plane on Kubernetes
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+dependencies:
+  - name: postgresql
+    version: 15.5.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: 19.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: kafka
+    version: 29.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: kafka.enabled
+  - name: clickhouse
+    version: 6.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: clickhouse.enabled
+  - name: kube-prometheus-stack
+    version: 61.x.x
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: monitoring.enabled
