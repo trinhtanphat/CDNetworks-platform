@@ -62,6 +62,7 @@ const config: Config = {
         { type: 'docSidebar', sidebarId: 'gettingStartedSidebar', position: 'left', label: 'Getting Started' },
         { type: 'docSidebar', sidebarId: 'tutorialsSidebar',      position: 'left', label: 'Tutorials' },
         { type: 'docSidebar', sidebarId: 'apiSidebar',            position: 'left', label: 'API Reference' },
+        { to: '/architecture/overview',                           position: 'left', label: 'Architecture' },
         { type: 'localeDropdown', position: 'right' },
         {
           href: 'https://console-cdnetworks.vnso.vn',
