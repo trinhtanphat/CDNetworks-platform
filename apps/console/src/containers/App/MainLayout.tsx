@@ -11,17 +11,16 @@ const { Content } = Layout;
  */
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Layout className="ant-layout isomorphicLayout" style={{ minHeight: '100vh' }}>
+    <Layout className="ant-layout isomorphicLayout cdn-app-shell" style={{ minHeight: '100vh' }}>
       <Sidebar />
       <Layout>
         <Topbar />
         <Content
-          className="isoContent"
+          className="isoContent cdn-content"
           style={{
             margin: 0,
-            padding: 24,
-            background: '#f1f3f6',
-            minHeight: 'calc(100vh - 64px)',
+            padding: 20,
+            minHeight: 'calc(100vh - 56px)',
           }}
         >
           {children}
