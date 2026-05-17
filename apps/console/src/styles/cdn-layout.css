@@ -1,0 +1,94 @@
+/**
+ * CDNetworks-inspired global styles.
+ * Bổ sung trên cùng styles.css (import sau reset.css + styles.css).
+ */
+
+/* ----- Layout densify ------------------------------------------------- */
+.cdn-app-shell { background: var(--cdn-surface-alt, #f8fafc); }
+.cdn-app-shell .ant-layout-header {
+  height: 56px; line-height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; background: #0b1f3a; color: #fff;
+  border-bottom: 1px solid #081831;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.15);
+}
+
+/* Top product switcher (mô phỏng dải đầu trang console) */
+.cdn-topbar {
+  display: flex; align-items: center; gap: 14px;
+  color: #c7d2e2; font-size: 13px;
+}
+.cdn-topbar .cdn-env-badge {
+  padding: 2px 10px; border-radius: 999px;
+  background: rgba(255,255,255,0.08); color: #ffd4b0;
+  font-weight: 600; font-size: 11px; letter-spacing: 0.4px; text-transform: uppercase;
+}
+
+/* Product rail (cấp 1) */
+.cdnProductRail {
+  background: #081831; width: 64px; padding: 8px 0;
+  display: flex; flex-direction: column; gap: 4px; align-items: center;
+}
+.cdnProductRail button {
+  width: 48px; height: 48px; border: 0; background: transparent;
+  border-radius: 8px; color: #94a3b8; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; transition: background .15s, color .15s;
+}
+.cdnProductRail button.active {
+  background: linear-gradient(135deg, #ff4d2e, #ffb020) !important;
+  color: #fff !important;
+}
+
+/* Secondary nav (cấp 2) */
+.cdn-secondary-nav .ant-menu {
+  background: #0f253f; border-right: 0;
+}
+.cdn-secondary-nav .ant-menu-item-selected {
+  background: #ff4d2e !important;
+}
+
+/* Content surface */
+.cdn-content {
+  padding: 20px; min-height: calc(100vh - 56px);
+}
+.cdn-page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.cdn-page-header h1 {
+  margin: 0; font-size: 20px; color: #0b1f3a; font-weight: 600;
+}
+.cdn-page-header .ant-breadcrumb {
+  font-size: 12px; margin-top: 2px;
+}
+
+/* KPI card */
+.cdn-kpi {
+  background: #fff; border: 1px solid #e4e7ec; border-radius: 10px;
+  padding: 16px 18px; display: flex; flex-direction: column; gap: 6px;
+}
+.cdn-kpi .label { color: #667085; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
+.cdn-kpi .value { color: #0b1f3a; font-size: 22px; font-weight: 700; }
+.cdn-kpi .delta.up { color: #12b76a; font-size: 12px; }
+.cdn-kpi .delta.down { color: #f04438; font-size: 12px; }
+
+/* Chart container */
+.cdn-chart-card {
+  background: #fff; border: 1px solid #e4e7ec; border-radius: 10px;
+  padding: 16px;
+}
+.cdn-chart-card h3 {
+  margin: 0 0 12px; font-size: 14px; color: #0b1f3a; font-weight: 600;
+}
+
+/* Dense table tweaks */
+.cdn-app-shell .ant-table-thead > tr > th {
+  font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px;
+}
+.cdn-app-shell .ant-table-tbody > tr > td { font-size: 13px; }
+
+/* Login page tint */
+.cdn-login-bg {
+  background: radial-gradient(ellipse at top left, #112a4d 0%, #0b1f3a 60%, #081831 100%);
+}
