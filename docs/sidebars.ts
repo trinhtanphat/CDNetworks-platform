@@ -20,6 +20,24 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: ['infrastructure/full-stack-deployment'],
     },
+    {
+      type: 'category',
+      label: 'Architecture',
+      collapsed: false,
+      items: [
+        'architecture/overview',
+        'architecture/logical-architecture',
+        'architecture/physical-topology',
+        'architecture/network',
+        'architecture/capacity-planning',
+        'architecture/observability',
+        'architecture/security',
+        'architecture/dr-bcp',
+        'architecture/runbook',
+        'architecture/operations',
+        'architecture/roadmap',
+      ],
+    },
   ],
 
   tutorialsSidebar: [
